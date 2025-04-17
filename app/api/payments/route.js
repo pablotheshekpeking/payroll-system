@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { sql } from "@/lib/db"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"
+import { authOptions } from "@/app/utils/auth"
 import { paystack } from "@/lib/paystack"
 
 export async function POST(request) {
