@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String   @unique
+  password  String
+  role      Role     @default(EMPLOYEE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Employee {
+  id              String    @id @default(cuid())
+  name            String
+  email           String    @unique
+  position        String
+  department      String
+  salary          Float
+  status          Status    @default(ACTIVE)
+  stripeAccountId String?
+  bankAccount     BankAccount?
+  payments        Payment[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Payroll {
+  id            String    @id @default(cuid())
+  name          String
+  payDate       DateTime
+  periodStart   DateTime
+  periodEnd     DateTime
+  totalAmount   Float
+  status        PayrollStatus @default(DRAFT)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  payments      Payment[]
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  amount          Float
+  status          PaymentStatus @default(PENDING)
+  processedAt     DateTime?
+  transferCode    String?
+  transferRef     String?
+  transferStatus  TransferStatus?
+  reason          String?
+  employee        Employee      @relation(fields: [employeeId], references: [id])
+  employeeId      String
+  payroll         Payroll       @relation(fields: [payrollId], references: [id])
+  payrollId       String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model BankAccount {
+  id                String   @id @default(cuid())
+  accountNumber     String
+  accountName       String
+  bankCode          String
+  bankName          String
+  currency          Currency @default(NGN)
+  recipientCode     String?
+  employee          Employee @relation(fields: [employeeId], references: [id])
+  employeeId        String   @unique
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN
+  FINANCE
+  EMPLOYEE
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+  ON_LEAVE
+}
+
+enum PayrollStatus {
+  DRAFT
+  SCHEDULED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+}
+
+enum Currency {
+  NGN
+  GHS
+  ZAR
+  USD
+}
+
+enum TransferStatus {
+  PENDING
+  PROCESSING
+  SUCCESS
+  FAILED
+  REVERSED
+}
