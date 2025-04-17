@@ -2,7 +2,7 @@ import type React from "react"
 import { redirect } from "next/navigation"
 import { getServerSession } from "next-auth"
 import { Shell } from "@/components/layout/shell"
-import { authOptions } from "../api/auth/[...nextauth]/route"
+import { authOptions } from "@/app/utils/auth"
 
 export default async function DashboardLayout({
   children,
