@@ -11,8 +11,7 @@ import { useRouter } from "next/navigation"
 import { Spinner } from "@/components/ui/spinner"
 import { usePayrollDetails } from "@/hooks/use-payroll"
 
-// Move utility functions outside the component
-const getStatusColor = (status: string) => {
+const getStatusColor = (status) => {
   switch (status) {
     case "DRAFT": return "bg-gray-500"
     case "SCHEDULED": return "bg-blue-500"
@@ -25,7 +24,7 @@ const getStatusColor = (status: string) => {
   }
 }
 
-const formatDate = (dateString: string | null) => {
+const formatDate = (dateString) => {
   if (!dateString) return "N/A"
   return new Date(dateString).toLocaleDateString("en-US", {
     year: "numeric",
@@ -34,7 +33,7 @@ const formatDate = (dateString: string | null) => {
   })
 }
 
-const formatAmount = (amount: number | undefined) => {
+const formatAmount = (amount) => {
   if (typeof amount !== 'number') return '₦0.00'
   return new Intl.NumberFormat('en-NG', {
     style: 'currency',
@@ -42,23 +41,7 @@ const formatAmount = (amount: number | undefined) => {
   }).format(amount)
 }
 
-type Payment = {
-  id: string
-  amount: number
-  status: string
-  processedAt: string | null
-  transferRef: string | null
-  employee: {
-    name: string
-    position: string
-  }
-}
-
-interface PaymentsTableProps {
-  payments: Payment[]
-}
-
-function PaymentsTable({ payments }: PaymentsTableProps) {
+function PaymentsTable({ payments }) {
   return (
     <Table>
       <TableHeader>
@@ -110,7 +93,7 @@ function PaymentsTable({ payments }: PaymentsTableProps) {
 export default function PayrollDetailsPage() {
   const params = useParams()
   const router = useRouter()
-  const { data: payroll, isLoading } = usePayrollDetails(params.id as string)
+  const { data: payroll, isLoading } = usePayrollDetails(params.id)
 
   if (isLoading) {
     return (

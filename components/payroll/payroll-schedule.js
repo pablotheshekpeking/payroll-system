@@ -18,19 +18,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
 
-type Payroll = {
-  id: string
-  name: string
-  payDate: string
-  periodStart: string
-  periodEnd: string
-  totalAmount: number
-  employeeCount: number
-  status: "DRAFT" | "SCHEDULED" | "PROCESSING" | "COMPLETED" | "FAILED"
-}
-
 export function PayrollSchedule() {
-  const [payrolls, setPayrolls] = useState<Payroll[]>([])
+  const [payrolls, setPayrolls] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const { toast } = useToast()
   const router = useRouter()
@@ -45,7 +34,7 @@ export function PayrollSchedule() {
         const data = await response.json()
 
         // Format the data to match our component's expected structure
-        const formattedData = data.map((payroll: any) => ({
+        const formattedData = data.map((payroll) => ({
           id: payroll.id,
           name: payroll.name,
           payDate: new Date(payroll.payDate).toLocaleDateString("en-US", {
@@ -77,7 +66,7 @@ export function PayrollSchedule() {
     fetchPayrolls()
   }, [toast])
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status) => {
     switch (status) {
       case "DRAFT":
         return "bg-gray-500"
@@ -94,7 +83,7 @@ export function PayrollSchedule() {
     }
   }
 
-  const handleViewDetails = (payrollId: string) => {
+  const handleViewDetails = (payrollId) => {
     router.push(`/payroll/${payrollId}`)
   }
 

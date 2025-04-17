@@ -22,6 +22,6 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "components/payroll/payroll-run-form.js", "components/payroll/process-payment.js", "components/payroll/payroll-schedule.js", "components/payroll/recent-payouts.js", "components/payments/recent-payments.js", "components/employees/employee-list.js"],
   "exclude": ["node_modules"]
 }

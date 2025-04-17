@@ -6,22 +6,11 @@ import { Badge } from "@/components/ui/badge"
 import { usePaymentsData } from "@/hooks/use-payments"
 import { Spinner } from "@/components/ui/spinner"
 
-type Payment = {
-  id: string
-  amount: number
-  status: "PENDING" | "PROCESSING" | "PAID" | "FAILED"
-  processedAt: string | null
-  createdAt: string
-  employeeName: string
-  payrollName: string
-  employeeCount: number
-}
-
 export function RecentPayments() {
   const { data, isLoading } = usePaymentsData()
   const payments = data?.payments || []
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status) => {
     switch (status) {
       case "PENDING":
         return "bg-yellow-500"
@@ -36,7 +25,7 @@ export function RecentPayments() {
     }
   }
 
-  const formatDate = (dateString: string | null) => {
+  const formatDate = (dateString) => {
     if (!dateString) return "N/A"
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -45,7 +34,7 @@ export function RecentPayments() {
     })
   }
 
-  const formatAmount = (amount: number | undefined) => {
+  const formatAmount = (amount) => {
     if (typeof amount !== 'number') return '₦0.00'
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',

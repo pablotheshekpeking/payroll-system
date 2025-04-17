@@ -24,34 +24,30 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
-import { Search, MoreHorizontal, Edit, Trash, Mail } from "lucide-react"
+import { Search, MoreHorizontal, Edit, Trash, Mail, Filter } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { useEmployees, useDeleteEmployee } from "@/hooks/use-employees"
 
-type Employee = {
-  id: string
-  name: string
-  email: string
-  position: string
-  department: string
-  salary: number
-  status: "ACTIVE" | "INACTIVE" | "ON_LEAVE"
-}
-
 export function EmployeeList() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null)
+  const [statusFilter, setStatusFilter] = useState("ALL")
+  const [employeeToDelete, setEmployeeToDelete] = useState(null)
   
   const { data: employees = [], isLoading } = useEmployees()
   const deleteEmployee = useDeleteEmployee()
   const router = useRouter()
-  const filteredEmployees = employees.filter(
-    (employee) =>
+
+  const filteredEmployees = employees.filter((employee) => {
+    const matchesSearch = 
       employee.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       employee.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       employee.position.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      employee.department.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+      employee.department.toLowerCase().includes(searchQuery.toLowerCase())
+
+    const matchesStatus = statusFilter === "ALL" || employee.status === statusFilter
+
+    return matchesSearch && matchesStatus
+  })
 
   const handleDelete = async () => {
     if (employeeToDelete) {
@@ -60,7 +56,7 @@ export function EmployeeList() {
     }
   }
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status) => {
     switch (status) {
       case "ACTIVE":
         return "bg-green-500"
@@ -72,6 +68,13 @@ export function EmployeeList() {
         return "bg-gray-500"
     }
   }
+
+  const statusOptions = [
+    { label: "All", value: "ALL" },
+    { label: "Active", value: "ACTIVE" },
+    { label: "Inactive", value: "INACTIVE" },
+    { label: "On Leave", value: "ON_LEAVE" },
+  ]
 
   return (
     <>
@@ -89,8 +92,50 @@ export function EmployeeList() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Filter className="h-4 w-4" />
+                  <span className="sr-only">Filter status</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {statusOptions.map((option) => (
+                  <DropdownMenuItem
+                    key={option.value}
+                    onClick={() => setStatusFilter(option.value)}
+                    className={statusFilter === option.value ? "bg-muted" : ""}
+                  >
+                    {option.value !== "ALL" && (
+                      <span 
+                        className={`mr-2 h-2 w-2 rounded-full ${getStatusColor(option.value)}`}
+                      />
+                    )}
+                    {option.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </CardHeader>
+
+        {statusFilter !== "ALL" && (
+          <div className="px-6 py-2 border-b">
+            <Badge variant="secondary" className="flex w-fit items-center gap-1">
+              <span className={`h-2 w-2 rounded-full ${getStatusColor(statusFilter)}`} />
+              {statusOptions.find(opt => opt.value === statusFilter)?.label}
+              <button
+                onClick={() => setStatusFilter("ALL")}
+                className="ml-1 hover:text-destructive"
+              >
+                ×
+              </button>
+            </Badge>
+          </div>
+        )}
+
         <CardContent>
           <Table>
             <TableHeader>
@@ -98,7 +143,7 @@ export function EmployeeList() {
                 <TableHead>Name</TableHead>
                 <TableHead>Position</TableHead>
                 <TableHead>Department</TableHead>
-                <TableHead className="hidden md:table-cell">Status</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead className="text-right">Salary</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
@@ -130,7 +175,7 @@ export function EmployeeList() {
                     </TableCell>
                     <TableCell>{employee.position}</TableCell>
                     <TableCell>{employee.department}</TableCell>
-                    <TableCell className="hidden md:table-cell">
+                    <TableCell>
                       <Badge variant="outline" className="flex w-fit items-center gap-1 font-normal">
                         <span className={`h-2 w-2 rounded-full ${getStatusColor(employee.status)}`} />
                         {employee.status.replace("_", " ")}

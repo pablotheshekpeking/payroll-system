@@ -47,16 +47,14 @@ const formSchema = z.object({
   processImmediately: z.boolean().default(false),
 })
 
-type FormSchema = z.infer<typeof formSchema>
-
 export function PayrollRunForm() {
   const { data: employees = [], isLoading: employeesLoading } = useEmployees()
   const createPayroll = useCreatePayroll()
-  const [selectedEmployees, setSelectedEmployees] = useState<string[]>([])
+  const [selectedEmployees, setSelectedEmployees] = useState([])
   const router = useRouter()
   const { toast } = useToast()
 
-  const form = useForm<FormSchema>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
@@ -65,7 +63,7 @@ export function PayrollRunForm() {
     },
   })
 
-  async function onSubmit(values: FormSchema) {
+  async function onSubmit(values) {
     if (selectedEmployees.length === 0) {
       toast({
         title: "No employees selected",
@@ -86,7 +84,7 @@ export function PayrollRunForm() {
     }
   }
 
-  const toggleEmployee = (employeeId: string) => {
+  const toggleEmployee = (employeeId) => {
     setSelectedEmployees((prev) =>
       prev.includes(employeeId) ? prev.filter((id) => id !== employeeId) : [...prev, employeeId],
     )

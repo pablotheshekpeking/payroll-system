@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -27,27 +27,15 @@ const formSchema = z.object({
   description: z.string().optional(),
 })
 
-type Employee = {
-  id: string
-  name: string
-  position: string
-}
-
-type Payroll = {
-  id: string
-  name: string
-  payDate: string
-}
-
 export function ProcessPayment() {
-  const [employees, setEmployees] = useState<Employee[]>([])
-  const [payrolls, setPayrolls] = useState<Payroll[]>([])
+  const [employees, setEmployees] = useState([])
+  const [payrolls, setPayrolls] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
 
   // Fetch employees and payrolls when component mounts
-  useState(() => {
+  useEffect(() => {
     async function fetchData() {
       try {
         const [employeesRes, payrollsRes] = await Promise.all([fetch("/api/employees"), fetch("/api/payroll")])
@@ -72,7 +60,7 @@ export function ProcessPayment() {
     fetchData()
   }, [toast])
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       amount: 0,
@@ -81,7 +69,7 @@ export function ProcessPayment() {
     },
   })
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values) {
     setIsLoading(true)
 
     try {
