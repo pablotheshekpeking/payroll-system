@@ -23,7 +23,7 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request) {
   const session = await getServerSession(authOptions)
 
   if (!session || session.user.role !== "ADMIN") {
@@ -56,4 +56,4 @@ export async function POST(request: Request) {
     console.error("Database error:", error)
     return NextResponse.json({ error: "Failed to create employee" }, { status: 500 })
   }
-}
+} 
