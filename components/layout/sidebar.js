@@ -8,12 +8,8 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { signOut } from "next-auth/react"
-interface SidebarProps {
-  open: boolean
-  onClose: () => void
-}
 
-export function Sidebar({ open, onClose }: SidebarProps) {
+export function Sidebar({ open, onClose }) {
   const pathname = usePathname()
 
   const logOut = () => {
@@ -89,25 +85,24 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       <ScrollArea className="flex-1 px-2">
         <div className="space-y-1 py-2">
           {routes.map((route) => (
-            <>
-            <Link
-              key={route.href}
-              href={route.href}
-              onClick={() => onClose()}
-              className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                route.active ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+            <div key={route.href}>
+              <Link
+                href={route.href}
+                onClick={() => onClose()}
+                className={cn(
+                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  route.active ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+                )}
+              >
+                <route.icon className="h-5 w-5" />
+                {route.label}
+              </Link>
+              {route.label === "Settings" && (
+                <Button variant="ghost" size="icon" onClick={logOut} className="w-full justify-start py-2 px-3">
+                  <LogOut className="h-5 w-5" /> Logout
+                </Button>
               )}
-            >
-              <route.icon className="h-5 w-5" />
-              {route.label}
-            </Link>
-            {route.label === "Settings" && (
-              <Button variant="ghost" size="icon" onClick={logOut} className="w-full justify-start py-2 px-3">
-                <LogOut className="h-5 w-5" /> Logout
-              </Button>
-            )}
-            </>
+            </div>
           ))}
         </div>
       </ScrollArea>
@@ -127,4 +122,4 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       <div className="hidden w-64 shrink-0 border-r bg-background md:block">{SidebarContent}</div>
     </>
   )
-}
+} 

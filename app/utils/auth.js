@@ -52,28 +52,39 @@ export const authOptions = {
       },
     }),
   ],
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.role = user.role
-        token.id = user.id
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === 'production' 
+        ? '__Secure-next-auth.session-token'
+        : 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
       }
-      return token
-    },
-    async session({ session, token }) {
-      if (token) {
-        session.user.role = token.role
-        session.user.id = token.id
-      }
-      return session
-    },
-  },
-  pages: {
-    signIn: "/login",
+    }
   },
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
-    updateAge: 24 * 60 * 60, // 24 hours
   },
+  callbacks: {
+    async session({ session, token }) {
+      if (token) {
+        session.user.id = token.sub
+      }
+      return session
+    },
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id
+      }
+      return token
+    }
+  },
+  pages: {
+    signIn: '/login',
+    error: '/login',
+  }
 } 
