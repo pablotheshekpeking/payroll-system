@@ -168,7 +168,7 @@ export function EmployeeList() {
                 </TableRow>
               ) : (
                 filteredEmployees.map((employee) => (
-                  <TableRow key={employee.id} onClick={() => router.push(`/employees/${employee.id}`)}>
+                  <TableRow key={employee.id} style={{ cursor: "pointer" }} onClick={() => router.push(`/employees/${employee.id}`)}>
                     <TableCell>
                       <div className="font-medium">{employee.name}</div>
                       <div className="text-sm text-muted-foreground">{employee.email}</div>

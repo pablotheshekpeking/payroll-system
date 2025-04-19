@@ -11,7 +11,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 
 const formSchema = z.object({
   employeeId: z.string({
@@ -32,7 +32,6 @@ export function ProcessPayment() {
   const [payrolls, setPayrolls] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
-  const { toast } = useToast()
 
   // Fetch employees and payrolls when component mounts
   useEffect(() => {
@@ -78,31 +77,41 @@ export function ProcessPayment() {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           ...values,
           processPayment: values.processImmediately,
         }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || "Failed to process payment")
+        // Handle specific error cases
+        if (data.error === "Employee bank details not found") {
+          toast.error("Employee does not have bank account details. Please add bank details before processing payment.")
+          return
+        }
+
+        if (response.status === 400) {
+          toast.error("Insufficient balance. Please add more funds to your account.")
+          return
+        }
+
+        if (response.status === 401) {
+          toast.error("Your session has expired. Please log in again.")
+          return
+        }
+
+        throw new Error(data.error || "Failed to process payment")
       }
 
-      toast({
-        title: "Payment processed",
-        description: "The payment has been processed successfully.",
-      })
-
+      toast.success("The payment has been initiated successfully.")
       router.refresh()
       form.reset()
     } catch (error) {
       console.error("Payment error:", error)
-      toast({
-        title: "Payment failed",
-        description: error instanceof Error ? error.message : "Failed to process payment",
-        variant: "destructive",
-      })
+      toast.error(error.message || "Failed to process payment")
     } finally {
       setIsLoading(false)
     }

@@ -19,7 +19,7 @@ export function Providers({ children }) {
           {children}
         </ThemeProvider>
       </SessionProvider>
-      <Toaster />
+      <Toaster richColors position="top-center" />
     </QueryClientProvider>
   );
 } 

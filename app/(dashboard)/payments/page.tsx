@@ -1,6 +1,6 @@
 import { PaymentsHeader } from "@/components/payments/payments-header"
 import { RecentPayments } from "@/components/payments/recent-payments"
-import { ProcessPayment } from "@/components/payroll/process-payment"
+import { ProcessPayment } from "@/components/payments/process-payment"
 
 export default function PaymentsPage() {
   return (

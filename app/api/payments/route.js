@@ -3,11 +3,22 @@ import { getServerSession } from "next-auth/next"
 import { sql } from "@/lib/db"
 import { authOptions } from "@/app/utils/auth"
 import { paystack } from "@/lib/paystack"
+import { v4 as uuidv4 } from 'uuid'
+
+// Define PaystackError class
+class PaystackError extends Error {
+  constructor(message, code, response) {
+    super(message)
+    this.name = 'PaystackError'
+    this.code = code
+    this.response = response
+  }
+}
 
 export async function POST(request) {
   const session = await getServerSession(authOptions)
 
-  if (!session || (session.user.role !== "ADMIN" && session.user.role !== "FINANCE")) {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -20,46 +31,58 @@ export async function POST(request) {
       return NextResponse.json({ error: "Invalid payment details" }, { status: 400 })
     }
 
-    // Check available balance first
-    const balance = await paystack.getBalance()
-    if (balance.balance < amount * 100) {
-      return NextResponse.json({ error: "Insufficient balance" }, { status: 400 })
+    // Check employee bank details first
+    const [employee] = await sql`
+      SELECT e.*, ba."accountNumber", ba."bankCode", ba."accountName"
+      FROM "Employee" e
+      LEFT JOIN "BankAccount" ba ON ba."employeeId" = e."id"
+      WHERE e."id" = ${employeeId}
+    `
+
+    if (!employee || !employee.accountNumber || !employee.bankCode) {
+      return NextResponse.json({ 
+        error: "Employee bank details not found",
+        message: "Please add bank account details before processing payment"
+      }, { status: 400 })
     }
 
-    // Start transaction
-    const payment = await sql.transaction(async (trx) => {
-      // Create payment record
-      const [payment] = await trx`
-        INSERT INTO "Payment" (
-          "amount", 
-          "status", 
-          "employeeId", 
-          "payrollId",
-          "description",
-          "currency"
-        ) VALUES (
-          ${amount},
-          'PENDING',
-          ${employeeId},
-          ${payrollId},
-          ${description},
-          ${currency}
-        )
-        RETURNING *
-      `
-
-      // Get employee bank details
-      const [employee] = await trx`
-        SELECT e.*, ba."accountNumber", ba."bankCode", ba."accountName"
-        FROM "Employee" e
-        LEFT JOIN "BankAccount" ba ON ba."employeeId" = e."id"
-        WHERE e."id" = ${employeeId}
-      `
-
-      if (!employee.accountNumber || !employee.bankCode) {
-        throw new Error("Employee bank details not found")
+    // Check available balance
+    try {
+      const balance = await paystack.getBalance()
+      if (balance.balance < amount * 100) {
+        return NextResponse.json({ error: "Insufficient balance" }, { status: 400 })
       }
+    } catch (error) {
+      console.error('Failed to check Paystack balance:', error)
+      return NextResponse.json({ error: "Unable to verify available balance" }, { status: 500 })
+    }
 
+    // Create payment record first
+    const id = uuidv4()
+    const [payment] = await sql`
+      INSERT INTO "Payment" (
+        "id",
+        "amount", 
+        "status", 
+        "employeeId", 
+        "payrollId",
+        "reason",
+        "createdAt",
+        "updatedAt"
+      ) VALUES (
+        ${id},
+        ${amount},
+        'PENDING',
+        ${employeeId},
+        ${payrollId},
+        ${description},
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
+      )
+      RETURNING *
+    `
+
+    try {
       // Create transfer recipient
       const recipient = await paystack.createTransferRecipient({
         type: "nuban",
@@ -83,7 +106,7 @@ export async function POST(request) {
       })
 
       // Update payment with transfer details
-      const [updatedPayment] = await trx`
+      const [updatedPayment] = await sql`
         UPDATE "Payment"
         SET 
           "status" = 'PROCESSING',
@@ -95,11 +118,27 @@ export async function POST(request) {
         RETURNING *
       `
 
-      return updatedPayment
-    })
+      return NextResponse.json(updatedPayment)
 
-    console.info('Payment initiated successfully', { paymentId: payment.id })
-    return NextResponse.json(payment)
+    } catch (error) {
+      // If Paystack transfer fails, update payment status to FAILED
+      await sql`
+        UPDATE "Payment"
+        SET 
+          "status" = 'FAILED',
+          "updatedAt" = CURRENT_TIMESTAMP
+        WHERE "id" = ${payment.id}
+      `
+
+      if (error.code === 'transfer_unavailable') {
+        return NextResponse.json({ 
+          error: "Payment transfers are not available. Please upgrade your Paystack account.",
+          code: error.code 
+        }, { status: 400 })
+      }
+
+      throw error
+    }
 
   } catch (error) {
     console.error('Payment processing failed', { error })
@@ -116,7 +155,7 @@ export async function POST(request) {
       { status: 500 }
     )
   }
-} 
+}
 
 export async function GET() {
     const session = await getServerSession(authOptions)

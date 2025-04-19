@@ -6,7 +6,7 @@ import { authOptions } from "@/app/utils/auth"
 export async function DELETE(request, { params }) {
   const session = await getServerSession(authOptions)
 
-  if (!session || session.user.role !== "ADMIN") {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -23,7 +23,7 @@ export async function DELETE(request, { params }) {
 export async function GET(request, { params }) {
   const session = await getServerSession(authOptions)
 
-  if (!session || session.user.role !== "ADMIN") {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
