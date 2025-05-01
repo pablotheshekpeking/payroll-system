@@ -8,7 +8,14 @@ import { useEdgeStore } from "@/lib/edgestore"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
-import { Card } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card"
 import {
   Select,
   SelectContent,
@@ -16,6 +23,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Separator } from "@/components/ui/separator"
+import { Upload, ArrowLeft, ArrowRight, User, FileText, CheckCircle2 } from "lucide-react"
+import { useTheme } from "next-themes"
 
 const GRADES = ['JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3']
 
@@ -37,8 +55,10 @@ const enrollmentSchema = z.object({
 })
 
 export default function EnrollmentPage() {
+  const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { edgestore } = useEdgeStore()
+  const { theme } = useTheme()
   
   const form = useForm({
     resolver: zodResolver(enrollmentSchema),
@@ -53,8 +73,31 @@ export default function EnrollmentPage() {
     }
   })
 
+  const validateStep1 = () => {
+    const fields = ['firstName', 'lastName', 'email', 'passportNumber', 'dateOfBirth', 'grade']
+    return fields.every(field => {
+      const value = form.getValues(field)
+      return value && value.length > 0
+    })
+  }
+
+  const handleNext = () => {
+    if (validateStep1()) {
+      setStep(2)
+    } else {
+      form.trigger(['firstName', 'lastName', 'email', 'passportNumber', 'dateOfBirth', 'grade'])
+      toast.error("Please fill in all required fields")
+    }
+  }
+
+  const handleBack = () => {
+    setStep(1)
+  }
+
   async function onSubmit(data) {
     setIsSubmitting(true)
+    const loadingToast = toast.loading("Submitting your application...")
+
     try {
       // Upload documents to EdgeStore
       const documents = []
@@ -65,9 +108,6 @@ export default function EnrollmentPage() {
               file,
               options: {
                 temporary: false
-              },
-              onProgressChange: (progress) => {
-                console.log(`Upload progress: ${progress}%`)
               },
             })
             documents.push({
@@ -81,13 +121,12 @@ export default function EnrollmentPage() {
         }
       }
 
-      // Create enrollment request with properly formatted grade
       const response = await fetch("/api/enrollment/apply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...data,
-          grade: data.grade.toUpperCase(), // Ensure grade is in uppercase
+          grade: data.grade.toUpperCase(),
           documents
         })
       })
@@ -97,196 +136,265 @@ export default function EnrollmentPage() {
         throw new Error(errorData.error || "Failed to submit enrollment")
       }
 
-      toast.success("Enrollment submitted successfully! Please wait for approval.")
+      toast.dismiss(loadingToast)
+      toast.success("Application submitted successfully!", {
+        description: "We will review your application and get back to you soon."
+      })
       form.reset()
       router.push("/")
     } catch (error) {
-      toast.error(error.message)
+      toast.dismiss(loadingToast)
+      toast.error("Failed to submit application", {
+        description: error.message
+      })
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <Card className="p-8 shadow-lg bg-white rounded-xl">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Student Enrollment Application</h1>
-          <p className="mt-2 text-gray-600">Please fill out all required information and upload necessary documents</p>
+    <div className="relative min-h-screen">
+      {/* Background gradient */}
+      <div 
+        className="absolute inset-0 -z-10 h-full w-full bg-white dark:bg-gray-950"
+        style={{
+          backgroundImage: theme === "dark" 
+            ? "radial-gradient(circle at center, rgba(24, 24, 27, 0) 0%, rgba(24, 24, 27, 0.8) 100%), linear-gradient(to bottom right, rgba(49, 46, 129, 0.2) 0%, rgba(76, 29, 149, 0.2) 50%, rgba(15, 23, 42, 0.2) 100%)"
+            : "radial-gradient(circle at center, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.8) 100%), linear-gradient(to bottom right, rgba(219, 234, 254, 0.4) 0%, rgba(147, 197, 253, 0.4) 50%, rgba(196, 181, 253, 0.4) 100%)"
+        }}
+      />
+
+      {/* Content */}
+      <div className="relative max-w-4xl mx-auto space-y-6 min-h-screen flex flex-col justify-center p-6">
+        {/* Progress Steps */}
+        <div className="flex items-center justify-center gap-4 mb-10">
+          <div className={`flex items-center gap-2 ${step === 1 ? 'text-primary' : 'text-muted-foreground'}`}>
+            <div className={`rounded-full p-2 ${
+              step === 1 
+                ? 'bg-primary text-primary-foreground' 
+                : 'bg-muted/50 backdrop-blur-sm'
+            }`}>
+              <User className="h-4 w-4" />
+            </div>
+            <span className="font-medium">Personal Information</span>
+          </div>
+          <div className="h-px w-8 bg-muted/50 backdrop-blur-sm" />
+          <div className={`flex items-center gap-2 ${step === 2 ? 'text-primary' : 'text-muted-foreground'}`}>
+            <div className={`rounded-full p-2 ${
+              step === 2 
+                ? 'bg-primary text-primary-foreground' 
+                : 'bg-muted/50 backdrop-blur-sm'
+            }`}>
+              <FileText className="h-4 w-4" />
+            </div>
+            <span className="font-medium">Required Documents</span>
+          </div>
         </div>
-        
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          {/* Personal Information Section */}
-          <div className="space-y-6">
-            <div className="border-b pb-2">
-              <h2 className="text-xl font-semibold text-gray-800">Personal Information</h2>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">First Name</label>
-                <Input
-                  {...form.register("firstName")}
-                  className="w-full rounded-lg border-gray-300"
-                  placeholder="Enter first name"
-                  disabled={isSubmitting}
-                />
-                {form.formState.errors.firstName && (
-                  <p className="text-sm text-red-500">{form.formState.errors.firstName.message}</p>
+        <Card className="backdrop-blur-sm bg-card/95">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl">
+              {step === 1 ? "Personal Information" : "Required Documents"}
+            </CardTitle>
+            <CardDescription>
+              {step === 1 
+                ? "Please provide your personal details accurately"
+                : "Upload the required documents in the specified formats"
+              }
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                {step === 1 ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="firstName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>First Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter first name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="lastName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Last Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter last name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email Address</FormLabel>
+                          <FormControl>
+                            <Input type="email" placeholder="your.email@example.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="passportNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Passport Number</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter passport number" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="dateOfBirth"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Date of Birth</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="grade"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Grade Level</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select grade level" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {GRADES.map((grade) => (
+                                <SelectItem key={grade} value={grade}>
+                                  {grade.replace(/([A-Z])(\d)/, '$1 $2')}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-6">
+                    <FormItem>
+                      <FormLabel>Passport Photo</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => form.setValue("documents.passport", e.target.files[0])}
+                          className="cursor-pointer"
+                        />
+                      </FormControl>
+                      <p className="text-sm text-muted-foreground">Accepted formats: JPG, PNG (Max: 5MB)</p>
+                    </FormItem>
+
+                    <FormItem>
+                      <FormLabel>Academic Transcript</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="file"
+                          accept=".pdf,.doc,.docx"
+                          onChange={(e) => form.setValue("documents.transcript", e.target.files[0])}
+                          className="cursor-pointer"
+                        />
+                      </FormControl>
+                      <p className="text-sm text-muted-foreground">Accepted formats: PDF, DOC, DOCX (Max: 5MB)</p>
+                    </FormItem>
+
+                    <FormItem>
+                      <FormLabel>Birth Certificate</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={(e) => form.setValue("documents.birthCertificate", e.target.files[0])}
+                          className="cursor-pointer"
+                        />
+                      </FormControl>
+                      <p className="text-sm text-muted-foreground">Accepted formats: PDF, JPG, PNG (Max: 5MB)</p>
+                    </FormItem>
+                  </div>
                 )}
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Last Name</label>
-                <Input
-                  {...form.register("lastName")}
-                  className="w-full rounded-lg border-gray-300"
-                  placeholder="Enter last name"
-                  disabled={isSubmitting}
-                />
-                {form.formState.errors.lastName && (
-                  <p className="text-sm text-red-500">{form.formState.errors.lastName.message}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Email Address</label>
-              <Input
-                {...form.register("email")}
-                type="email"
-                className="w-full rounded-lg border-gray-300"
-                placeholder="your.email@example.com"
-                disabled={isSubmitting}
-              />
-              {form.formState.errors.email && (
-                <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Passport Number</label>
-                <Input
-                  {...form.register("passportNumber")}
-                  className="w-full rounded-lg border-gray-300"
-                  placeholder="Enter passport number"
-                  disabled={isSubmitting}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Date of Birth</label>
-                <Input
-                  {...form.register("dateOfBirth")}
-                  type="date"
-                  className="w-full rounded-lg border-gray-300"
-                  disabled={isSubmitting}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Grade Level</label>
-              <Select
-                onValueChange={(value) => form.setValue("grade", value)}
-                defaultValue={form.getValues("grade")}
+              </form>
+            </Form>
+          </CardContent>
+          <CardFooter className="flex justify-between">
+            {step === 2 && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleBack}
                 disabled={isSubmitting}
               >
-                <SelectTrigger className="w-full rounded-lg border-gray-300">
-                  <SelectValue placeholder="Select grade level" />
-                </SelectTrigger>
-                <SelectContent>
-                  {GRADES.map((grade) => (
-                    <SelectItem 
-                      key={grade} 
-                      value={grade}
-                      className="cursor-pointer"
-                    >
-                      {grade.replace(/([A-Z])(\d)/, '$1 $2')}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {form.formState.errors.grade && (
-                <p className="text-sm text-red-500">
-                  {form.formState.errors.grade.message}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Document Upload Section */}
-          <div className="space-y-6">
-            <div className="border-b pb-2">
-              <h2 className="text-xl font-semibold text-gray-800">Required Documents</h2>
-              <p className="mt-1 text-sm text-gray-600">Please upload clear, legible copies of all required documents</p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-6">
-              <div className="p-4 bg-gray-50 rounded-lg space-y-2">
-                <label className="text-sm font-medium text-gray-700">Passport Photo</label>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  className="w-full"
-                  onChange={(e) => {
-                    form.setValue("documents.passport", e.target.files[0])
-                  }}
-                  disabled={isSubmitting}
-                />
-                <p className="text-xs text-gray-500">Accepted formats: JPG, PNG (Max: 5MB)</p>
-              </div>
-
-              <div className="p-4 bg-gray-50 rounded-lg space-y-2">
-                <label className="text-sm font-medium text-gray-700">Academic Transcript</label>
-                <Input
-                  type="file"
-                  accept=".pdf,.doc,.docx"
-                  className="w-full"
-                  onChange={(e) => {
-                    form.setValue("documents.transcript", e.target.files[0])
-                  }}
-                  disabled={isSubmitting}
-                />
-                <p className="text-xs text-gray-500">Accepted formats: PDF, DOC, DOCX (Max: 5MB)</p>
-              </div>
-
-              <div className="p-4 bg-gray-50 rounded-lg space-y-2">
-                <label className="text-sm font-medium text-gray-700">Birth Certificate</label>
-                <Input
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  className="w-full"
-                  onChange={(e) => {
-                    form.setValue("documents.birthCertificate", e.target.files[0])
-                  }}
-                  disabled={isSubmitting}
-                />
-                <p className="text-xs text-gray-500">Accepted formats: PDF, JPG, PNG (Max: 5MB)</p>
-              </div>
-            </div>
-          </div>
-
-          <Button
-            type="submit"
-            className="w-full py-3 bg-primary hover:bg-primary/90 text-white font-medium rounded-lg"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <div className="flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Submitting Application...
-              </div>
-            ) : (
-              "Submit Application"
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back
+              </Button>
             )}
-          </Button>
-        </form>
-      </Card>
+            {step === 1 ? (
+              <Button
+                type="button"
+                className="ml-auto"
+                onClick={handleNext}
+              >
+                Next
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                onClick={form.handleSubmit(onSubmit)}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Upload className="mr-2 h-4 w-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    Submit Application
+                  </>
+                )}
+              </Button>
+            )}
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   )
 } 

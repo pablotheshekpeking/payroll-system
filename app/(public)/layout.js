@@ -1,13 +1,19 @@
 import { EdgeStoreProvider } from "@/lib/edgestore"
+import { ThemeProvider } from "@/components/theme-provider"
 
 export default function PublicLayout({ children }) {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto py-8">
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
+      <div className="min-h-screen">
         <EdgeStoreProvider>
           {children}
         </EdgeStoreProvider>
       </div>
-    </div>
+    </ThemeProvider>
   )
 } 
