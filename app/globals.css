@@ -74,3 +74,47 @@
     @apply bg-background text-foreground;
   }
 }
+
+.text-red-600{
+  color: #b91c1c;
+}
+
+.bg-green-100{
+  background-color: #dcfce7;
+}
+
+.text-green-800{
+  color: #16a34a;
+}
+
+.bg-yellow-100{
+  background-color: #fef3c7;
+}
+
+.text-yellow-800{
+  color: #f59e0b;
+}
+
+.bg-green-500{
+  background-color: #16a34a;
+}
+
+.bg-red-500{
+  background-color: #b91c1c;
+}
+
+.bg-yellow-500{
+  background-color: #f59e0b;
+} 
+
+.bg-gray-500{
+  background-color: #64748b;
+}
+
+.text-green-600{
+  color: #16a34a;
+}
+
+
+
+

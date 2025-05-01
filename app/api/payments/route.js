@@ -49,7 +49,7 @@ export async function POST(request) {
     // Check available balance
     try {
       const balance = await paystack.getBalance()
-      if (balance.balance < amount * 100) {
+      if (balance.balance < amount) {
         return NextResponse.json({ error: "Insufficient balance" }, { status: 400 })
       }
     } catch (error) {

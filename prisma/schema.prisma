@@ -8,13 +8,21 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   name      String?
-  email     String   @unique
+  email     String    @unique
   password  String
-  role      Role     @default(EMPLOYEE)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  role      Role      @default(EMPLOYEE)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relations
+  student                  Student?
+  userTrainings            UserTraining[]
+  supportTicketsCreated    SupportTicket[] @relation("SupportCreatedBy")
+  supportTicketsAssigned   SupportTicket[] @relation("SupportAssignedTo")
+  enrollmentsApproved      Enrollment[]    @relation("EnrollmentApprover")
+  migrationLogsRun         MigrationLog[]
 }
 
 model Employee {
@@ -33,53 +41,169 @@ model Employee {
 }
 
 model Payroll {
-  id            String    @id @default(cuid())
-  name          String
-  payDate       DateTime
-  periodStart   DateTime
-  periodEnd     DateTime
-  totalAmount   Float
-  status        PayrollStatus @default(DRAFT)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  payments      Payment[]
+  id           String        @id @default(cuid())
+  name         String
+  payDate      DateTime
+  periodStart  DateTime
+  periodEnd    DateTime
+  totalAmount  Float
+  status       PayrollStatus @default(DRAFT)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  payments     Payment[]
 }
 
 model Payment {
-  id              String        @id @default(cuid())
-  amount          Float
-  status          PaymentStatus @default(PENDING)
-  processedAt     DateTime?
-  transferCode    String?
-  transferRef     String?
-  transferStatus  TransferStatus?
-  reason          String?
-  employee        Employee      @relation(fields: [employeeId], references: [id])
-  employeeId      String
-  payroll         Payroll       @relation(fields: [payrollId], references: [id])
-  payrollId       String
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id             String         @id @default(cuid())
+  amount         Float
+  status         PaymentStatus  @default(PENDING)
+  processedAt    DateTime?
+  transferCode   String?
+  transferRef    String?
+  transferStatus TransferStatus?
+  reason         String?
+
+  // Payroll relation
+  employee       Employee?      @relation(fields: [employeeId], references: [id])
+  employeeId     String?
+  payroll        Payroll?       @relation(fields: [payrollId], references: [id])
+  payrollId      String?
+
+  // Fee payment relation
+  studentFee     StudentFee?    @relation("FeePayments", fields: [studentFeeId], references: [id])
+  studentFeeId   String?
+
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 }
 
 model BankAccount {
-  id                String   @id @default(cuid())
-  accountNumber     String
-  accountName       String
-  bankCode          String
-  bankName          String
-  currency          Currency @default(NGN)
-  recipientCode     String?
-  employee          Employee @relation(fields: [employeeId], references: [id])
-  employeeId        String   @unique
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id             String    @id @default(cuid())
+  accountNumber  String
+  accountName    String
+  bankCode       String
+  bankName       String
+  currency       Currency  @default(NGN)
+  recipientCode  String?
+  employee       Employee  @relation(fields: [employeeId], references: [id])
+  employeeId     String    @unique
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Student {
+  id         String        @id @default(cuid())
+  user       User          @relation(fields: [userId], references: [id])
+  userId     String        @unique
+  firstName  String
+  lastName   String
+  dateOfBirth DateTime
+  grade      Grade
+  enrollment Enrollment?
+  fees       StudentFee[]
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+}
+
+model Enrollment {
+  id             String           @id @default(cuid())
+  student        Student          @relation(fields: [studentId], references: [id])
+  studentId      String           @unique
+  status         EnrollmentStatus @default(PENDING)
+  appliedAt      DateTime         @default(now())
+  approvedBy     User?            @relation("EnrollmentApprover", fields: [approvedById], references: [id])
+  approvedById   String?
+  approvedAt     DateTime?
+  documents      Document[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+model Document {
+  id           String     @id @default(cuid())
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
+  enrollmentId String
+  fileName     String
+  url          String
+  uploadedAt   DateTime   @default(now())
+}
+
+model Fee {
+  id          String       @id @default(cuid())
+  name        String
+  description String?
+  amount      Float
+  currency    Currency     @default(NGN)
+  term        String
+  isActive    Boolean      @default(true)
+  studentFees StudentFee[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model StudentFee {
+  id         String        @id @default(cuid())
+  student    Student       @relation(fields: [studentId], references: [id])
+  studentId  String
+  fee        Fee           @relation(fields: [feeId], references: [id])
+  feeId      String
+  assignedAt DateTime      @default(now())
+  dueDate    DateTime
+  payments   Payment[]     @relation("FeePayments")
+}
+
+model MigrationLog {
+  id              String   @id @default(cuid())
+  entity          String
+  recordsTotal    Int
+  recordsImported Int
+  errorsCount     Int
+  runBy           User?    @relation(fields: [runById], references: [id])
+  runById         String?
+  runAt           DateTime @default(now())
+}
+
+model TrainingSession {
+  id            String         @id @default(cuid())
+  title         String
+  description   String?
+  scheduledAt   DateTime
+  recordingUrl  String?
+  materialsUrl  String?
+  userTrainings UserTraining[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model UserTraining {
+  id          String          @id @default(cuid())
+  user        User            @relation(fields: [userId], references: [id])
+  userId      String
+  session     TrainingSession @relation(fields: [sessionId], references: [id])
+  sessionId   String
+  completedAt DateTime?
+  createdAt   DateTime        @default(now())
+}
+
+model SupportTicket {
+  id             String       @id @default(cuid())
+  subject        String
+  description    String
+  status         TicketStatus @default(OPEN)
+  createdBy      User         @relation("SupportCreatedBy", fields: [createdById], references: [id])
+  createdById    String
+  assignedTo     User?        @relation("SupportAssignedTo", fields: [assignedToId], references: [id])
+  assignedToId   String?
+  resolvedAt     DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 }
 
 enum Role {
   ADMIN
   FINANCE
   EMPLOYEE
+  STUDENT
 }
 
 enum Status {
@@ -116,4 +240,26 @@ enum TransferStatus {
   SUCCESS
   FAILED
   REVERSED
+}
+
+enum EnrollmentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum Grade {
+  JSS1
+  JSS2
+  JSS3
+  SS1
+  SS2
+  SS3
 }

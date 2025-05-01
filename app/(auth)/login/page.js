@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, Suspense } from "react"
-import { signIn } from "next-auth/react"
+import { signIn, getSession } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -35,19 +35,60 @@ function LoginForm() {
       const response = await signIn("credentials", {
         email: data.email,
         password: data.password,
-        callbackUrl: callbackUrl,
+        callbackUrl,
         redirect: false,
       })
 
       if (response?.error) {
-        toast.error("Invalid credentials")
+        // Handle specific error messages
+        switch (response.error) {
+          case "No user found with this email":
+            toast.error("Account Not Found", {
+              description: "No account exists with this email address"
+            })
+            break
+          case "Invalid password":
+            toast.error("Invalid Password", {
+              description: "The password you entered is incorrect"
+            })
+            break
+          case "Enrollment pending approval":
+            toast.error("Enrollment Pending", {
+              description: "Your enrollment is still pending approval"
+            })
+            break
+          case "No enrollment found":
+            toast.error("No Enrollment", {
+              description: "No enrollment record found for this account"
+            })
+            break
+          default:
+            toast.error("Login Failed", {
+              description: response.error
+            })
+        }
         return
       }
 
+      if (!response?.ok) {
+        toast.error("Authentication Failed", {
+          description: "There was a problem with the authentication service"
+        })
+        return
+      }
+
+      // Success case
+      toast.success("Login Successful", {
+        description: "Redirecting to your dashboard..."
+      })
       router.push(callbackUrl)
       router.refresh()
+
     } catch (error) {
-      toast.error("Something went wrong")
+      console.error("Login error:", error)
+      toast.error("System Error", {
+        description: "An unexpected error occurred. Please try again later."
+      })
     } finally {
       setIsLoading(false)
     }
@@ -61,6 +102,7 @@ function LoginForm() {
           type="email"
           placeholder="Email"
           disabled={isLoading}
+          className={form.formState.errors.email ? "border-red-500" : ""}
         />
         {form.formState.errors.email && (
           <p className="text-sm text-red-500">
@@ -74,6 +116,7 @@ function LoginForm() {
           type="password"
           placeholder="Password"
           disabled={isLoading}
+          className={form.formState.errors.password ? "border-red-500" : ""}
         />
         {form.formState.errors.password && (
           <p className="text-sm text-red-500">
