@@ -1,13 +1,13 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Loader2, CheckCircle2, XCircle } from "lucide-react"
 import { toast } from "sonner"
 
-export default function VerifyPaymentPage() {
+function VerifyPaymentContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [status, setStatus] = useState("verifying") // verifying, success, failed
@@ -100,5 +100,35 @@ export default function VerifyPaymentPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+// Loading fallback component
+function VerifyPaymentFallback() {
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardContent className="pt-6 text-center">
+          <div className="space-y-4">
+            <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
+            <div>
+              <h2 className="text-xl font-semibold">Loading</h2>
+              <p className="text-muted-foreground">
+                Please wait...
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+// Main page component with Suspense boundary
+export default function VerifyPaymentPage() {
+  return (
+    <Suspense fallback={<VerifyPaymentFallback />}>
+      <VerifyPaymentContent />
+    </Suspense>
   )
 } 
