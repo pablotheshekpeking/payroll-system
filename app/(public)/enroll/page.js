@@ -34,6 +34,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Upload, ArrowLeft, ArrowRight, User, FileText, CheckCircle2 } from "lucide-react"
 import { useTheme } from "next-themes"
+import { useRouter } from "next/navigation"
 
 const GRADES = ['JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3']
 
@@ -59,6 +60,7 @@ export default function EnrollmentPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { edgestore } = useEdgeStore()
   const { theme } = useTheme()
+  const router = useRouter()
   
   const form = useForm({
     resolver: zodResolver(enrollmentSchema),
@@ -137,11 +139,18 @@ export default function EnrollmentPage() {
       }
 
       toast.dismiss(loadingToast)
+      
+      // Show success toast and redirect after a delay
       toast.success("Application submitted successfully!", {
-        description: "We will review your application and get back to you soon."
+        description: "We will review your application and get back to you soon. Redirecting ...",
+        duration: 3000, // Show for 3 seconds
+        onAutoClose: () => {
+          // Redirect to login page after toast is dismissed
+          router.push("/login")
+        }
       })
+      
       form.reset()
-      router.push("/")
     } catch (error) {
       toast.dismiss(loadingToast)
       toast.error("Failed to submit application", {
