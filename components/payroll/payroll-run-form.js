@@ -100,7 +100,7 @@ export function PayrollRunForm() {
 
   const totalAmount = employees
     .filter((emp) => selectedEmployees.includes(emp.id))
-    .reduce((sum, emp) => sum + emp.salary / 24, 0)
+    .reduce((sum, emp) => sum + emp.salary / 12, 0)
 
   if (employeesLoading) {
     return (
@@ -296,7 +296,7 @@ export function PayrollRunForm() {
                     </div>
                     <div className="text-right">
                       <p className="font-medium">
-                        ${(employee.salary / 12).toFixed(2)}
+                        ₦{(employee.salary / 12).toFixed(2)}
                       </p>
                       <p className="text-sm text-muted-foreground">
                         Monthly
@@ -339,7 +339,7 @@ export function PayrollRunForm() {
             <CardFooter className="flex justify-between border-t bg-muted/50 px-6 py-4">
               <div>
                 <p className="text-sm font-medium">Total Amount</p>
-                <p className="text-2xl font-bold">${totalAmount.toFixed(2)}</p>
+                <p className="text-2xl font-bold">₦{totalAmount.toFixed(2)}</p>
                 <p className="text-xs text-muted-foreground">
                   {selectedEmployees.length} employees
                 </p>

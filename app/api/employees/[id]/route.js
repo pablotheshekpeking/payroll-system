@@ -11,7 +11,7 @@ export async function DELETE(request, { params }) {
   }
 
   try {
-    const { id } = params
+    const { id } = await params
     await sql`DELETE FROM "Employee" WHERE id = ${id}`
     return NextResponse.json({ message: "Employee deleted successfully" })
   } catch (error) {
@@ -28,7 +28,7 @@ export async function GET(request, { params }) {
   }
 
   try {
-    const { id } = params
+    const { id } = await params
     const employees = await sql`SELECT * FROM "Employee" WHERE id = ${id}`
     
     // Return 404 if employee not found

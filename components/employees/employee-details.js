@@ -2,6 +2,7 @@
 
 import { useEmployee } from "@/hooks/use-employees";
 import { BankAccountForm } from "@/components/employees/bank-account-form";
+import { BankAccountDetails } from "@/components/employees/bank-account-details";
 import { PaymentForm } from "@/components/payments/payment-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -89,11 +90,15 @@ export function EmployeeDetails({ employeeId }) {
                 </CardContent>
             </Card>
 
-            <Tabs defaultValue="bank">
+            <Tabs defaultValue="account">
                 <TabsList>
-                    <TabsTrigger value="bank">Bank Account</TabsTrigger>
+                    <TabsTrigger value="account">Account Details</TabsTrigger>
+                    <TabsTrigger value="bank">Add Bank Account</TabsTrigger>
                     <TabsTrigger value="payment">Payments</TabsTrigger>
                 </TabsList>
+                <TabsContent value="account">
+                    <BankAccountDetails employeeId={employeeId} />
+                </TabsContent>
                 <TabsContent value="bank">
                     <BankAccountForm employeeId={employeeId} />
                 </TabsContent>

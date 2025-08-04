@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { 
   Home,
   GraduationCap,
@@ -9,11 +10,14 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { signOut } from "next-auth/react"
+import { cn } from "@/lib/utils"
 
 export function Sidebar({ onClose }) {
+  const pathname = usePathname()
+  
   const links = [
     { href: "/studentdash", label: "Dashboard", icon: Home },
-    { href: "/studentdash/enrollment", label: "Enrollment", icon: GraduationCap },
+    //{ href: "/studentdash/enrollment", label: "Enrollment", icon: GraduationCap },
     { href: "/studentdash/fees", label: "Fees & Payments", icon: CreditCard },
     { href: "/studentdash/documents", label: "Documents", icon: FileText },
   ]
@@ -38,20 +42,33 @@ export function Sidebar({ onClose }) {
       <div className="flex flex-col h-full">
         <nav className="flex-1 p-4 bg-white">
           <div className="space-y-2">
-            {links.map(({ href, label, icon: Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                onClick={onClose}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg
-                  hover:bg-gray-100 transition-colors
-                  text-gray-700 hover:text-gray-900
-                  font-medium relative group"
-              >
-                <Icon className="h-5 w-5 text-gray-600 group-hover:text-gray-900" />
-                <span className="font-bolder">{label}</span>
-              </Link>
-            ))}
+            {links.map(({ href, label, icon: Icon }) => {
+              const isActive = pathname === href || 
+                (href !== "/studentdash" && pathname?.startsWith(href))
+              
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={onClose}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-3 rounded-lg transition-colors font-medium relative group",
+                    isActive 
+                      ? "bg-primary/10 text-primary hover:bg-primary/20" 
+                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                  )}
+                >
+                  <Icon className={cn(
+                    "h-5 w-5",
+                    isActive ? "text-primary" : "text-gray-600 group-hover:text-gray-900"
+                  )} />
+                  <span className="font-medium">{label}</span>
+                  {isActive && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full" />
+                  )}
+                </Link>
+              )
+            })}
           </div>
         </nav>
         

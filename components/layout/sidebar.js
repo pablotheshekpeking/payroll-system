@@ -2,12 +2,13 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Users, CreditCard, Calendar, Settings, DollarSign, LogOut } from "lucide-react"
+import { LayoutDashboard, Users, CreditCard, Calendar, Settings, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { signOut } from "next-auth/react"
+import NairaSign from "../ui/NairaSign"
 
 export function Sidebar({ open, onClose }) {
   const pathname = usePathname()
@@ -39,21 +40,9 @@ export function Sidebar({ open, onClose }) {
     },
     {
       label: "Payments",
-      icon: DollarSign,
+      icon: NairaSign,
       href: "/payments",
       active: pathname === "/payments",
-    },
-    {
-      label: "Schedule",
-      icon: Calendar,
-      href: "/schedule",
-      active: pathname === "/schedule",
-    },
-    {
-      label: "Settings",
-      icon: Settings,
-      href: "/settings",
-      active: pathname === "/settings",
     },
   ]
 
@@ -69,7 +58,7 @@ export function Sidebar({ open, onClose }) {
               href={route.href}
               onClick={() => onClose()}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                 "hover:bg-muted/50",
                 route.active ? "bg-primary text-primary-foreground hover:bg-primary/90" : "text-muted-foreground hover:text-foreground"
               )}

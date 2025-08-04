@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, DollarSign, Calendar, TrendingUp } from "lucide-react"
+import { Users, Calendar, TrendingUp } from "lucide-react"
+import NairaSign from "../ui/NairaSign"
 import { useToast } from "@/hooks/use-toast"
 
 export function DashboardCards() {
@@ -86,14 +87,14 @@ export function DashboardCards() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Monthly Payroll</CardTitle>
-          <DollarSign className="h-4 w-4 text-muted-foreground" />
+          <NairaSign className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="h-8 w-24 animate-pulse rounded bg-muted"></div>
           ) : (
             <>
-              <div className="text-2xl font-bold">${stats.totalPayroll.toLocaleString()}</div>
+              <div className="text-2xl font-bold">₦{stats.totalPayroll.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">Total monthly expenses</p>
             </>
           )}

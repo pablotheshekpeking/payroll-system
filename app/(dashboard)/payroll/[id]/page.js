@@ -114,7 +114,7 @@ export default function PayrollDetailsPage() {
 
   return (
     <div className="container mx-auto py-8">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between">
         <Button variant="ghost" onClick={() => router.back()}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Payrolls
@@ -125,7 +125,7 @@ export default function PayrollDetailsPage() {
         </Button>
       </div>
 
-      <div className="grid gap-6">
+      <div className="grid gap-6 mt-4">
         {/* Summary Card */}
         <Card>
           <CardHeader>

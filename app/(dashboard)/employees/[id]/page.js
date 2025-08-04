@@ -1,5 +1,6 @@
 import { EmployeeDetails } from "@/components/employees/employee-details";
 
-export default function EmployeeDetailPage({ params }) {
-  return <EmployeeDetails employeeId={params.id} />;
+export default async function EmployeeDetailPage({ params }) {
+  const { id } = await params;
+  return <EmployeeDetails employeeId={id} />;
 } 

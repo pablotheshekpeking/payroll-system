@@ -7,17 +7,24 @@ export function useInitiatePayment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ employeeId, amount, description }) => {
+    mutationFn: async ({ employeeId, amount, description, payrollId }) => {
       const response = await fetch(`/api/payments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ employeeId, amount, description }),
+        body: JSON.stringify({ employeeId, amount, description, payrollId }),
       });
-      if (!response.ok) throw new Error("Failed to initiate payment");
-      return response.json();
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to initiate payment");
+      }
+      
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["payments"]);
+      queryClient.invalidateQueries(["payrolls"]);
       toast.success("Payment initiated successfully");
     },
     onError: (error) => {
@@ -31,9 +38,16 @@ export function useEmployeePayments(employeeId) {
     queryKey: ["payments", employeeId],
     queryFn: async () => {
       const response = await fetch(`/api/employees/${employeeId}/payments`);
-      if (!response.ok) throw new Error("Failed to fetch payments");
-      return response.json();
-    }
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to fetch payments");
+      }
+      
+      return result;
+    },
+    enabled: !!employeeId
   });
 }
 
@@ -42,15 +56,16 @@ export function usePaymentsData() {
     queryKey: ["payrolls"],
     queryFn: async () => {
       const response = await fetch("/api/payments");
+      
+      const result = await response.json();
+      
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to fetch payrolls data");
+        throw new Error(result.error || "Failed to fetch payrolls data");
       }
-      const payrolls = await response.json();
       
       // Transform the data to match the expected format in components
       return {
-        payments: payrolls.flatMap(payroll => 
+        payments: result.flatMap(payroll => 
           (payroll.payments || []).map(payment => ({
             id: payment.id,
             amount: payment.amount,

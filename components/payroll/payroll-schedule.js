@@ -37,7 +37,8 @@ export function PayrollSchedule() {
         const formattedData = data.map((payroll) => ({
           id: payroll.id,
           name: payroll.name,
-          payDate: new Date(payroll.payDate).toLocaleDateString("en-US", {
+          payDate: new Date(payroll.payDate),
+          payDateFormatted: new Date(payroll.payDate).toLocaleDateString("en-US", {
             year: "numeric",
             month: "long",
             day: "numeric",
@@ -87,6 +88,22 @@ export function PayrollSchedule() {
     router.push(`/payroll/${payrollId}`)
   }
 
+  // Filter payrolls based on pay date
+  const today = new Date()
+  today.setHours(0, 0, 0, 0) // Reset time to start of day for accurate comparison
+
+  const upcomingPayrolls = payrolls.filter(payroll => {
+    const payDate = new Date(payroll.payDate)
+    payDate.setHours(0, 0, 0, 0)
+    return payDate >= today
+  })
+
+  const pastPayrolls = payrolls.filter(payroll => {
+    const payDate = new Date(payroll.payDate)
+    payDate.setHours(0, 0, 0, 0)
+    return payDate < today
+  })
+
   return (
     <Card>
       <CardHeader>
@@ -95,8 +112,8 @@ export function PayrollSchedule() {
       <CardContent>
         <Tabs defaultValue="upcoming">
           <TabsList className="mb-4">
-            <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-            <TabsTrigger value="past">Past</TabsTrigger>
+            <TabsTrigger value="upcoming">Upcoming ({upcomingPayrolls.length})</TabsTrigger>
+            <TabsTrigger value="past">Past ({pastPayrolls.length})</TabsTrigger>
           </TabsList>
           <TabsContent value="upcoming">
             <Table>
@@ -120,48 +137,52 @@ export function PayrollSchedule() {
                       </div>
                     </TableCell>
                   </TableRow>
+                ) : upcomingPayrolls.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-16 text-center text-muted-foreground">
+                      No upcoming payrolls
+                    </TableCell>
+                  </TableRow>
                 ) : (
-                  payrolls
-                    .filter((p) => p.status === "SCHEDULED" || p.status === "DRAFT")
-                    .map((payroll) => (
-                      <TableRow key={payroll.id}>
-                        <TableCell>
-                          <div className="font-medium">{payroll.name}</div>
-                          <div className="text-sm text-muted-foreground">{payroll.employeeCount} employees</div>
-                        </TableCell>
-                        <TableCell>{payroll.payDate}</TableCell>
-                        <TableCell className="hidden md:table-cell">{payroll.period}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="flex w-fit items-center gap-1 font-normal">
-                            <span className={`h-2 w-2 rounded-full ${getStatusColor(payroll.status)}`} />
-                            {payroll.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">${payroll.totalAmount.toLocaleString()}</TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Open menu</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleViewDetails(payroll.id)}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                View Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <FileText className="mr-2 h-4 w-4" />
-                                Edit
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                  upcomingPayrolls.map((payroll) => (
+                    <TableRow key={payroll.id}>
+                      <TableCell>
+                        <div className="font-medium">{payroll.name}</div>
+                        <div className="text-sm text-muted-foreground">{payroll.employeeCount} employees</div>
+                      </TableCell>
+                      <TableCell>{payroll.payDateFormatted}</TableCell>
+                      <TableCell className="hidden md:table-cell">{payroll.period}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="flex w-fit items-center gap-1 font-normal">
+                          <span className={`h-2 w-2 rounded-full ${getStatusColor(payroll.status)}`} />
+                          {payroll.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">₦{payroll.totalAmount.toLocaleString()}</TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Open menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleViewDetails(payroll.id)}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <FileText className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
                 )}
               </TableBody>
             </Table>
@@ -188,48 +209,52 @@ export function PayrollSchedule() {
                       </div>
                     </TableCell>
                   </TableRow>
+                ) : pastPayrolls.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-16 text-center text-muted-foreground">
+                      No past payrolls
+                    </TableCell>
+                  </TableRow>
                 ) : (
-                  payrolls
-                    .filter((p) => p.status === "COMPLETED" || p.status === "FAILED")
-                    .map((payroll) => (
-                      <TableRow key={payroll.id}>
-                        <TableCell>
-                          <div className="font-medium">{payroll.name}</div>
-                          <div className="text-sm text-muted-foreground">{payroll.employeeCount} employees</div>
-                        </TableCell>
-                        <TableCell>{payroll.payDate}</TableCell>
-                        <TableCell className="hidden md:table-cell">{payroll.period}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="flex w-fit items-center gap-1 font-normal">
-                            <span className={`h-2 w-2 rounded-full ${getStatusColor(payroll.status)}`} />
-                            {payroll.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">${payroll.totalAmount.toLocaleString()}</TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Open menu</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleViewDetails(payroll.id)}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                View Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Download className="mr-2 h-4 w-4" />
-                                Download Report
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                  pastPayrolls.map((payroll) => (
+                    <TableRow key={payroll.id}>
+                      <TableCell>
+                        <div className="font-medium">{payroll.name}</div>
+                        <div className="text-sm text-muted-foreground">{payroll.employeeCount} employees</div>
+                      </TableCell>
+                      <TableCell>{payroll.payDateFormatted}</TableCell>
+                      <TableCell className="hidden md:table-cell">{payroll.period}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="flex w-fit items-center gap-1 font-normal">
+                          <span className={`h-2 w-2 rounded-full ${getStatusColor(payroll.status)}`} />
+                          {payroll.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">₦{payroll.totalAmount.toLocaleString()}</TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Open menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleViewDetails(payroll.id)}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Download className="mr-2 h-4 w-4" />
+                              Download Report
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
                 )}
               </TableBody>
             </Table>

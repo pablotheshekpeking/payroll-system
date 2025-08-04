@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
+import { Badge } from "@/components/ui/badge"
+import { Play, TestTube } from "lucide-react"
 
 const formSchema = z.object({
   employeeId: z.string({
@@ -24,6 +26,7 @@ const formSchema = z.object({
     message: "Amount must be a positive number.",
   }),
   processImmediately: z.boolean().default(false),
+  dryRun: z.boolean().default(false),
   description: z.string().optional(),
 })
 
@@ -48,25 +51,24 @@ export function ProcessPayment() {
         }
       } catch (error) {
         console.error("Error fetching data:", error)
-        toast({
-          title: "Error",
-          description: "Failed to load data. Please try again.",
-          variant: "destructive",
-        })
+        toast.error("Failed to load data. Please try again.")
       }
     }
 
     fetchData()
-  }, [toast])
+  }, [])
 
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       amount: 0,
       processImmediately: true,
+      dryRun: false,
       description: "",
     },
   })
+
+  const watchDryRun = form.watch("dryRun")
 
   async function onSubmit(values) {
     setIsLoading(true)
@@ -81,6 +83,7 @@ export function ProcessPayment() {
         body: JSON.stringify({
           ...values,
           processPayment: values.processImmediately,
+          dryRun: values.dryRun,
         }),
       })
 
@@ -106,7 +109,15 @@ export function ProcessPayment() {
         throw new Error(data.error || "Failed to process payment")
       }
 
-      toast.success("The payment has been initiated successfully.")
+      // Show appropriate success message based on dry run mode
+      if (values.dryRun) {
+        toast.success("Payment simulation completed successfully!", {
+          description: "This was a test run - no actual payment was processed."
+        })
+      } else {
+        toast.success("Payment has been initiated successfully!")
+      }
+      
       router.refresh()
       form.reset()
     } catch (error) {
@@ -120,8 +131,21 @@ export function ProcessPayment() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Process Payment</CardTitle>
-        <CardDescription>Process a payment for an employee.</CardDescription>
+        <CardTitle className="flex items-center gap-2">
+          Process Payment
+          {watchDryRun && (
+            <Badge variant="secondary" className="flex items-center gap-1">
+              <TestTube className="h-3 w-3" />
+              Test Mode
+            </Badge>
+          )}
+        </CardTitle>
+        <CardDescription>
+          {watchDryRun 
+            ? "Simulate a payment without actually processing it. Useful for testing."
+            : "Process a payment for an employee."
+          }
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -185,7 +209,7 @@ export function ProcessPayment() {
                   <FormControl>
                     <Input type="number" step="0.01" placeholder="0.00" {...field} />
                   </FormControl>
-                  <FormDescription>Enter the payment amount in USD.</FormDescription>
+                  <FormDescription>Enter the payment amount in NGN.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -205,27 +229,69 @@ export function ProcessPayment() {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="processImmediately"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                  <FormControl>
-                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>Process immediately</FormLabel>
-                    <FormDescription>If checked, payment will be processed immediately via Stripe.</FormDescription>
-                  </div>
-                </FormItem>
-              )}
-            />
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="dryRun"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="flex items-center gap-2">
+                        <TestTube className="h-4 w-4" />
+                        Dry Run Mode
+                      </FormLabel>
+                      <FormDescription>
+                        Simulate the payment without actually processing it. Perfect for testing payment flows.
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="processImmediately"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="flex items-center gap-2">
+                        <Play className="h-4 w-4" />
+                        Process immediately
+                      </FormLabel>
+                      <FormDescription>
+                        If checked, payment will be processed immediately via Paystack.
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
           </form>
         </Form>
       </CardContent>
       <CardFooter>
-        <Button onClick={form.handleSubmit(onSubmit)} disabled={isLoading}>
-          {isLoading ? "Processing..." : "Process Payment"}
+        <Button 
+          onClick={form.handleSubmit(onSubmit)} 
+          disabled={isLoading}
+          className="flex items-center gap-2"
+        >
+          {isLoading ? (
+            <>
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              {watchDryRun ? "Simulating..." : "Processing..."}
+            </>
+          ) : (
+            <>
+              {watchDryRun ? <TestTube className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              {watchDryRun ? "Simulate Payment" : "Process Payment"}
+            </>
+          )}
         </Button>
       </CardFooter>
     </Card>

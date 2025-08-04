@@ -11,8 +11,9 @@ export async function GET(request, { params }) {
   }
 
   try {
+    const { id } = await params
     const payroll = await prisma.payroll.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         payments: {
           include: {

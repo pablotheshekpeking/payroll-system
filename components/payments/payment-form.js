@@ -6,17 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
 
 export function PaymentForm({ employeeId }) {
   const initiatePayment = useInitiatePayment();
   const { register, handleSubmit, formState: { errors }, reset } = useForm();
+  const [isDryRun, setIsDryRun] = useState(false)
 
   const onSubmit = async (data) => {
     try {
       await initiatePayment.mutateAsync({
         employeeId,
         amount: parseFloat(data.amount),
-        description: data.description
+        description: data.description,
+        dryRun: isDryRun
       });
       reset();
     } catch (error) {
@@ -51,6 +54,19 @@ export function PaymentForm({ employeeId }) {
               {...register("description")}
               placeholder="Payment description"
             />
+          </div>
+
+          <div className="flex items-center space-x-2 mb-4">
+            <input
+              type="checkbox"
+              id="dryRun"
+              checked={isDryRun}
+              onChange={(e) => setIsDryRun(e.target.checked)}
+              className="rounded border-gray-300"
+            />
+            <label htmlFor="dryRun" className="text-sm font-medium">
+              Dry Run Mode (Simulate Payment)
+            </label>
           </div>
 
           <Button

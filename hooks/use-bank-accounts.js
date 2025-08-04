@@ -35,14 +35,18 @@ export function useCreateBankAccount() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(accountData),
       });
+      
+      const result = await response.json();
+      
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to create bank account");
+        throw new Error(result.error || "Failed to create bank account");
       }
-      return response.json();
+      
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["bankAccounts"]);
+      queryClient.invalidateQueries(["bankAccount"]);
       toast.success("Bank account added successfully");
     },
     onError: (error) => {

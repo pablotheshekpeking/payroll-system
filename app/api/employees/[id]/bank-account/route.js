@@ -6,96 +6,46 @@ import { authOptions } from "@/app/utils/auth";
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 
 export async function POST(request, { params }) {
-  const session = await getServerSession(authOptions);
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
-    const { accountNumber, bankCode, bankName } = await request.json();
-    const { id: employeeId } = params;
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { accountNumber, bankCode, bankName } = await request.json()
+    const { id: employeeId } = await params // Fix: await the params
 
     // Check for existing bank account
     const existingAccount = await prisma.bankAccount.findUnique({
-      where: { employeeId }
-    });
+      where: {
+        employeeId: employeeId
+      }
+    })
 
     if (existingAccount) {
-      return NextResponse.json(
-        { error: "Employee already has a bank account registered" },
+      return Response.json(
+        { error: "Employee already has a bank account" },
         { status: 400 }
-      );
+      )
     }
 
-    // Verify account with Paystack
-    const verifyResponse = await fetch(
-      `https://api.paystack.co/bank/resolve?account_number=${accountNumber}&bank_code=${bankCode}`,
-      {
-        headers: {
-          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-
-    const verifyData = await verifyResponse.json();
-
-    if (!verifyResponse.ok || !verifyData.status) {
-      return NextResponse.json(
-        { error: verifyData.message || "Invalid account details" },
-        { status: 400 }
-      );
-    }
-
-    // Create transfer recipient on Paystack
-    const recipientResponse = await fetch(
-      'https://api.paystack.co/transferrecipient',
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          type: "nuban",
-          name: verifyData.data.account_name,
-          account_number: accountNumber,
-          bank_code: bankCode,
-          currency: "NGN"
-        })
-      }
-    );
-
-    const recipientData = await recipientResponse.json();
-
-    if (!recipientResponse.ok || !recipientData.status) {
-      return NextResponse.json(
-        { error: recipientData.message || "Failed to create transfer recipient" },
-        { status: 400 }
-      );
-    }
-
-    // Save bank account details
+    // Create new bank account
     const bankAccount = await prisma.bankAccount.create({
       data: {
         accountNumber,
-        accountName: verifyData.data.account_name,
         bankCode,
         bankName,
-        currency: "NGN",
-        recipientCode: recipientData.data.recipient_code,
-        employeeId
+        employeeId: employeeId
       }
-    });
+    })
 
-    return NextResponse.json(bankAccount);
+    return Response.json(bankAccount)
   } catch (error) {
-    console.error("Bank account creation error:", error);
-    return NextResponse.json(
+    console.error("Failed to create bank account:", error)
+    return Response.json(
       { error: "Failed to create bank account" },
       { status: 500 }
-    );
+    )
   }
 }
 
@@ -107,7 +57,7 @@ export async function GET(request, { params }) {
   }
 
   try {
-    const { id: employeeId } = params;
+    const { id: employeeId } = await params; // Fix: await the params
 
     const bankAccount = await prisma.bankAccount.findUnique({
       where: { employeeId }
