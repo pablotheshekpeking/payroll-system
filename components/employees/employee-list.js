@@ -181,7 +181,7 @@ export function EmployeeList() {
                         {employee.status.replace("_", " ")}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">${employee.salary.toLocaleString()}</TableCell>
+                    <TableCell className="text-right">₦{employee.salary.toLocaleString()}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
