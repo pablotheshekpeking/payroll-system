@@ -72,7 +72,7 @@ export function EmployeeDetails({ employeeId }) {
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-muted-foreground">Salary</label>
-                                <p className="mt-1">${employee.salary.toLocaleString()}</p>
+                                <p className="mt-1">₦{employee.salary.toLocaleString()}</p>
                             </div>
                         </div>
                         
